@@ -1,8 +1,12 @@
-import requests
-import bs4
 import json
-from optparse import OptionParser
+import os
+import re
 import sys
+
+import requests
+
+import bs4
+from lxml import etree
 
 
 def save_as(file_name, link):
@@ -18,6 +22,11 @@ def save_as(file_name, link):
 
 def _name(artist, name):
     return '{name}-{artist}.mp3'.format(name=name, artist=artist).\
+        replace(' ', '_')
+
+
+def _name_without_extension(artist, name):
+    return '{name}-{artist}'.format(name=name, artist=artist).\
         replace(' ', '_')
 
 
@@ -42,9 +51,32 @@ def get_mp3(link):
 
 
 def get_album(link):
+    pattern = 'album\/((.)+)\/'
+    album = re.compile(pattern).search(link).group(1)
+
     data_xml_link = _fetch_data_xml(link)
-    pass
+    content = requests.get(data_xml_link).content
+    xml = etree.XML(content)
+    songs = []
+
+    for item in xml.cssselect('data item'):
+        name = item.find('title').text
+        artist = item.find('performer').text
+        link = item.find('source').text.replace('http://', 'http://org2.')
+        songs.append((_name_without_extension(artist, name), link))
+
+    return album, songs
 
 
-song_name, link = get_mp3(sys.argv[1])
-save_as(song_name, link)
+def save_album(album, songs):
+    if not os.path.exists(album):
+        os.makedirs(album)
+
+    for song in songs:
+        name, link = song
+        file_name = '{album}/{song_name}.mp3'.format(album=album,
+                                                     song_name=name)
+        save_as(file_name, link)
+
+album, songs = get_album(sys.argv[1])
+save_album(album, songs)
