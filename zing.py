@@ -1,7 +1,9 @@
-import json
 import os
 import re
 import sys
+import json
+from argparse import ArgumentParser
+
 
 import requests
 
@@ -62,6 +64,7 @@ def get_album(link):
     for item in xml.cssselect('data item'):
         name = item.find('title').text
         artist = item.find('performer').text
+        # directly pull from their server
         link = item.find('source').text.replace('http://', 'http://org2.')
         songs.append((_name_without_extension(artist, name), link))
 
@@ -78,5 +81,24 @@ def save_album(album, songs):
                                                      song_name=name)
         save_as(file_name, link)
 
-album, songs = get_album(sys.argv[1])
-save_album(album, songs)
+
+def main():
+    parser = ArgumentParser()
+    parser.add_argument('link', metavar='link', type=str)
+    parser.add_argument('--single', action='store_true', dest='is_single')
+    parser.add_argument('--album', action='store_false', dest='is_single')
+
+    args = parser.parse_args()
+    is_single = args.is_single
+    link = args.link
+
+    if is_single:
+        song_name, mp3_link = get_mp3(link)
+        save_as(song_name, mp3_link)
+    else:
+        album, songs = get_album(link)
+        save_album(album, songs)
+
+
+if __name__ == '__main__':
+    main()
