@@ -12,4 +12,4 @@ python zing.py --single <put-the-album-link-here>
 ```
 
 # License
-Yup, that's it: (WTFPL)[http://www.wtfpl.net/]
+Yup, that's it: [WTFPL](http://www.wtfpl.net/)
