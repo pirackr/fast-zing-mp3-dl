@@ -8,7 +8,7 @@
 
 ``` bash
 python zing.py --single <put-the-song-link-here>
-python zing.py --single <put-the-album-link-here>
+python zing.py --album <put-the-album-link-here>
 ```
 
 # License
