@@ -3,9 +3,7 @@ import re
 import json
 from argparse import ArgumentParser
 
-
 import requests
-
 import bs4
 from lxml import etree
 
