@@ -20,7 +20,7 @@ def save_as(file_name, link):
     print('save' + link)
 
 def _name(artist, name):
-    return '{name}-{artist}'.format(name=name, artist=artist).\
+    return '{name}-{artist}'.format(name=name.encode('utf-8'), artist=artist.encode('utf-8')).\
         replace(' ', '_').replace('/', '')
 
 
