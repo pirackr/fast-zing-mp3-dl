@@ -17,11 +17,11 @@ def save_as(file_name, link):
 
         for block in response.iter_content(1024):
             f.write(block)
-
+    print('save' + link)
 
 def _name(artist, name):
-    return '{name}-{artist}.mp3'.format(name=name, artist=artist).\
-        replace(' ', '_')
+    return '{name}-{artist}'.format(name=name, artist=artist).\
+        replace(' ', '_').replace('/', '')
 
 
 def _name_without_extension(artist, name):
@@ -33,37 +33,42 @@ def _fetch_data_xml(link):
     response = requests.get(link)
     html = bs4.BeautifulSoup(response.content, 'html.parser')
     data_xml_link = html.find(id='html5player').attrs['data-xml']
+    album = html.select('.info-top-play h1.txt-primary')[0].get_text()
+    return album, data_xml_link
+
+
+def _fetch_data_xml_for_single(link):
+    response = requests.get(link)
+    html = bs4.BeautifulSoup(response.content, 'html.parser')
+    data_xml_link = html.find(id='zplayerjs-wrapper').attrs['data-xml']
+
     return data_xml_link
 
 
 def get_mp3(link):
-    data_xml_link = _fetch_data_xml(link)
+    data_xml_link = _fetch_data_xml_for_single(link)
     data_xml = requests.get(data_xml_link)
     # hey, zing devs, why json when you name it xml T_T?
     data = json.loads(data_xml.content)['data'][0]
 
     song_name = _name(data['artist'], data['name'])
-    mp3_link = data['source_list'][1]
-    link = 'http://org2.%s' % mp3_link
+    mp3_link = data['source_list'][0]
 
-    return song_name, link
+    return song_name, mp3_link
 
 
 def get_album(link):
-    pattern = 'album\/((.)+)\/'
-    album = re.compile(pattern).search(link).group(1)
-
-    data_xml_link = _fetch_data_xml(link)
-    content = requests.get(data_xml_link).content
-    xml = etree.XML(content)
     songs = []
+    album, data_xml_link = _fetch_data_xml(link)
+    data_xml = requests.get(data_xml_link)
+    data = json.loads(data_xml.content)['data']
 
-    for item in xml.cssselect('data item'):
-        name = item.find('title').text
-        artist = item.find('performer').text
-        # directly pull from their server
-        link = item.find('source').text.replace('http://', 'http://org2.')
-        songs.append((_name_without_extension(artist, name), link))
+    for datum in data:
+        song_name = _name(datum['artist'], datum['name'])
+        link = datum['source_list'][0]
+        songs.append((song_name, link,))
+
+    print(album)
 
     return album, songs
 
@@ -76,6 +81,7 @@ def save_album(album, songs):
         name, link = song
         file_name = '{album}/{song_name}.mp3'.format(album=album,
                                                      song_name=name)
+        print('Saving', file_name)
         save_as(file_name, link)
 
 
